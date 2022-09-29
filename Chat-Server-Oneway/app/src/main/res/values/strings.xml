@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Dominic\'s Chat Server (Room)</string>
+    <string name="app_name">Jessica\'s Chat Server (Room)</string>
 
     <!-- Use this to reference the development machine from emulator -->
     <string name="localhost">10.0.2.2</string>

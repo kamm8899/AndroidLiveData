@@ -9,6 +9,7 @@ import android.widget.ListView;
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.stevens.cs522.chatserver.R;
@@ -32,6 +33,7 @@ public class ViewPeersActivity extends FragmentActivity implements AdapterView.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.view_peers);
 
+        //make the adapter and assign it to the list view
         peersAdapter = new SimpleArrayAdapter<>(this);
         ListView peersList = findViewById(R.id.peer_list);
         peersList.setAdapter(peersAdapter);
@@ -41,10 +43,14 @@ public class ViewPeersActivity extends FragmentActivity implements AdapterView.O
         /*
          * TODO query the database asynchronously, registering an observer for the result.
          */
-
-
+        List<Peer> allPeers = chatDatabase.peerDao().fetchAllPeers().getValue();
+        if (allPeers == null){
+            allPeers = new ArrayList<>();
+        }
+        peersAdapter.setElements(allPeers);
+        peersAdapter.notifyDataSetChanged();
         // TODO set item click listener to this activity
-
+        peersList.setOnItemClickListener(this);
     }
 
     @Override

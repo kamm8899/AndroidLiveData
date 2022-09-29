@@ -42,7 +42,13 @@ public class ViewPeerActivity extends FragmentActivity {
         }
 
         // TODO Set the fields of the UI
+        TextView userName = findViewById(R.id.view_user_name);
+        TextView lastSeen = findViewById(R.id.view_timestamp);
+        TextView location = findViewById(R.id.view_location);
 
+        userName.setText( getString(R.string.view_user_name, peer.name)  );
+        lastSeen.setText( getString(R.string.view_timestamp, formatTimestamp(peer.timestamp))  );
+        location.setText( getString(R.string.view_location, peer.latitude,peer.longitude)  );
         // End TODO
 
         SimpleArrayAdapter<Message> messagesAdapter = new SimpleArrayAdapter<>(this);
@@ -54,7 +60,10 @@ public class ViewPeerActivity extends FragmentActivity {
         /*
          * TODO query the database asynchronously for the messages just for this peer.
          */
-
+        List<Message> peerMessages = chatDatabase.messageDao().fetchMessagesFromPeer(peer.name).getValue();
+        //give the adapter the information to show
+        messagesAdapter.setElements(peerMessages);
+        messagesAdapter.notifyDataSetChanged();
 
     }
 

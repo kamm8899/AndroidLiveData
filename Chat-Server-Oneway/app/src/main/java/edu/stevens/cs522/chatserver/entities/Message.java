@@ -18,17 +18,22 @@ import edu.stevens.cs522.base.DateUtils;
  */
 
 /*
- * TODO as an entity object
+
  *
  * You should specify that "sender" is a FK reference to a peer record.
  * You should also declare a (non-unique) index for this FK field, so
  * integrity checking does not involve a linear search of this table.
  */
-
+@Entity(foreignKeys = @ForeignKey(
+        //where does the ForeignKey live, in the Peer Class
+        entity=Peer.class, onDelete=ForeignKey.CASCADE,
+        //column name in parent table       column name in child table
+        parentColumns="name", childColumns="sender"),
+        indices = @Index("sender"))
 public class Message implements Parcelable {
 
     // TODO primary key
-
+    @PrimaryKey(autoGenerate = true)
     public long id;
 
     public String chatroom;
@@ -36,7 +41,7 @@ public class Message implements Parcelable {
     public String messageText;
 
     // TODO Last time we heard from this peer.
-
+    @TypeConverters(DateConverter.class)
     public Date timestamp;
 
     public Double latitude;
@@ -92,4 +97,3 @@ public class Message implements Parcelable {
     };
 
 }
-

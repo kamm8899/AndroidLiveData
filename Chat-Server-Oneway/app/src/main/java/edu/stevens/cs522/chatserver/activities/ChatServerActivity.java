@@ -25,10 +25,13 @@ import android.widget.ListView;
 
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
 import java.io.StringReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -43,7 +46,7 @@ import edu.stevens.cs522.chatserver.ui.MessagesAdapter;
 
 public class ChatServerActivity extends FragmentActivity implements OnClickListener {
 
-	final static public String TAG = ChatServerActivity.class.getCanonicalName();
+    final static public String TAG = ChatServerActivity.class.getCanonicalName();
 
     public final static String SENDER_NAME = "name";
 
@@ -56,18 +59,18 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
     public final static String LATITUDE = "latitude";
 
     public final static String LONGITUDE = "longitude";
-		
-	/*
-	 * Socket used both for sending and receiving
-	 */
+
+    /*
+     * Socket used both for sending and receiving
+     */
     private DatagramSendReceive serverSocket;
 //  private DatagramSocket serverSocket;
 
 
     /*
-	 * True as long as we don't get socket errors
-	 */
-	private boolean socketOK = true;
+     * True as long as we don't get socket errors
+     */
+    private boolean socketOK = true;
 
     /*
      * Data access objects.
@@ -78,13 +81,19 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
 
     private PeerDao peerDao;
 
+    private ListView lstMessages;
+
+    private MessagesAdapter adpMessages;
+
+    private Button btnNext;
+
 
     /*
-	 * Called when the activity is first created. 
-	 */
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+     * Called when the activity is first created.
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.view_messages);
 
         /**
@@ -121,26 +130,61 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
         Log.d(TAG, "Opening the database....");
         // TODO open the database
         // Note use getApplicationContext, do not make DB depend on UI!
+        // Get database instance
+        chatDatabase =  ChatDatabase.getInstance(ChatServerActivity.this);
 
 
         Log.d(TAG, "Querying the database asynchronously....");
         // TODO query the database asynchronously, registering an observer for the result.
         // Note: The adapter has a method for resetting the backing store.
+        // Get dao
+        messageDao = chatDatabase.messageDao();
+        peerDao = chatDatabase.peerDao();
+        // Query database
+        List<Message> messages = messageDao.fetchAllMessages().getValue();
+
+        if (messages ==null){
+            messages = new ArrayList<>();
+        }
+
+        messagesAdapter.setElements(messages);
+        //set that the list view shows these messages
+        //messageList.setAdapter(messagesAdapter);
+
+        messageDao.fetchAllMessages().observe(this, new Observer<List<Message>>() {
+            @Override
+            public void onChanged(List<Message> messages) {
+                //if our list of messages has changed we should set the elements in our
+                //adapter to be the new list of messagesa, and also notify the UI
+                //that the data has changed so it get's redrawn
+                adpMessages.setElements(messages);
+                adpMessages.notifyDataSetChanged();
+            }
+        });
+
+
+        //we need the initial load to show some values so lets set the LiveData value
+        //that way the observer above fires
+
+        //NOTE: the LiveData class does not have setValue so cast this as MutableLiveData
+        //messageDao.fetchAllMessages().setValue(messages);
 
 
         Log.d(TAG, "Binding the callback for the NEXT button....");
         // TODO bind the button for "next" to this activity as listener
+        btnNext = findViewById(R.id.next);
+        btnNext.setOnClickListener(this);
 
 
-	}
+    }
 
     public void onClick(View v) {
-		
-		byte[] receiveData = new byte[1024];
 
-		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        byte[] receiveData = new byte[1024];
 
-		try {
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+
+        try {
 
             String sender = null;
 
@@ -225,8 +269,11 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
             message.longitude = longitude;
 
             /*
-			 * TODO upsert peer and insert message into the database
-			 */
+             * TODO upsert peer and insert message into the database
+             */
+            peerDao.upsert(peer);
+            messageDao.persist(message);
+
 
             /*
              * End TODO
@@ -234,30 +281,30 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
              * The livedata for the messages should update via observer automatically.
              */
 
-		} catch (Exception e) {
-			
-			Log.e(TAG, "Problems receiving packet: " + e.getMessage(), e);
-			socketOK = false;
-		} 
+        } catch (Exception e) {
 
-	}
+            Log.e(TAG, "Problems receiving packet: " + e.getMessage(), e);
+            socketOK = false;
+        }
 
-	/*
-	 * Close the socket before exiting application
-	 */
-	public void closeSocket() {
-	    if (serverSocket != null) {
+    }
+
+    /*
+     * Close the socket before exiting application
+     */
+    public void closeSocket() {
+        if (serverSocket != null) {
             serverSocket.close();
             serverSocket = null;
         }
-	}
+    }
 
-	/*
-	 * If the socket is OK, then it's running
-	 */
-	boolean socketIsOK() {
-		return socketOK;
-	}
+    /*
+     * If the socket is OK, then it's running
+     */
+    boolean socketIsOK() {
+        return socketOK;
+    }
 
     public void onDestroy() {
         super.onDestroy();
@@ -269,7 +316,8 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         // TODO inflate a menu with PEERS option
-
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.chatserver_menu, menu);
 
         return true;
     }
@@ -281,8 +329,8 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
         if (itemId == R.id.peers) {
             // TODO PEERS provide the UI for viewing list of peers
             // The subactivity will query the database for the list of peers.
-
-
+            Intent i = new Intent(this, ViewPeersActivity.class );
+            startActivity(i);
 
         }
         return false;
