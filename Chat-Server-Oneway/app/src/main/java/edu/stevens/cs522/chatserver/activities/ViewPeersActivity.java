@@ -8,6 +8,7 @@ import android.widget.ListView;
 
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,9 @@ public class ViewPeersActivity extends FragmentActivity implements AdapterView.O
         /*
          * TODO query the database asynchronously, registering an observer for the result.
          */
+
         List<Peer> allPeers = chatDatabase.peerDao().fetchAllPeers().getValue();
+        //allPeers might be null so make an empty list if that happens
         if (allPeers == null){
             allPeers = new ArrayList<>();
         }
@@ -51,6 +54,19 @@ public class ViewPeersActivity extends FragmentActivity implements AdapterView.O
         peersAdapter.notifyDataSetChanged();
         // TODO set item click listener to this activity
         peersList.setOnItemClickListener(this);
+
+        //The fetchAllPeers() will not return any values unless we are observing it
+        //to receive the output
+        chatDatabase.peerDao().fetchAllPeers().observe(this, new Observer<List<Peer>>() {
+            @Override
+            public void onChanged(List<Peer> peers) {
+                //if our list of messages has changed we should set the elements in our
+                //adapter to be the new list of messagesa, and also notify the UI
+                //that the data has changed so it get's redrawn
+                peersAdapter.setElements(peers);
+                peersAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override

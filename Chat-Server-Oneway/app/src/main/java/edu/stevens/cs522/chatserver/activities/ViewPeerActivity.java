@@ -7,11 +7,14 @@ import android.widget.TextView;
 
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 
 import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -61,16 +64,30 @@ public class ViewPeerActivity extends FragmentActivity {
          * TODO query the database asynchronously for the messages just for this peer.
          */
         List<Message> peerMessages = chatDatabase.messageDao().fetchMessagesFromPeer(peer.name).getValue();
+        if (peerMessages == null){
+            peerMessages = new ArrayList<>();
+        }
         //give the adapter the information to show
         messagesAdapter.setElements(peerMessages);
         messagesAdapter.notifyDataSetChanged();
 
+        chatDatabase.messageDao().fetchMessagesFromPeer(peer.name).observe(this, new Observer<List<Message>>() {
+            @Override
+            public void onChanged(List<Message> messages) {
+                messagesAdapter.setElements(messages);
+                messagesAdapter.notifyDataSetChanged();
+            }
+        });
+
     }
 
+    //TODO PUT THIS BACK IN
     private static String formatTimestamp(Date timestamp) {
         LocalDateTime dateTime = timestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         return dateTime.format(formatter);
+       /* SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        return simpleDateFormat.format(timestamp);*/
     }
 
     @Override
