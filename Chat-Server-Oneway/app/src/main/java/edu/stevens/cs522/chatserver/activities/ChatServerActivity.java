@@ -138,30 +138,23 @@ public class ChatServerActivity extends FragmentActivity implements OnClickListe
         peerDao = chatDatabase.peerDao();
         // Query database
         List<Message> messages = messageDao.fetchAllMessages().getValue();
-        //if there are no messages yet then the line above will come back null
-        //but we need to be able to show that there are no messages yet and null will break the program so
+
         if (messages == null){
             messages = new ArrayList<>();
         }
         //set the elements that the adapter should show on the screen
         messagesAdapter.setElements(messages);
 
-        //Since we are observing the fetchAllMessages, when a new message gets added to the table
-        //the LiveData in our app will change so this will get fired off
+
         messageDao.fetchAllMessages().observe(this, new Observer<List<Message>>() {
             @Override
             public void onChanged(List<Message> messages) {
-                //if our list of messages has changed we should set the elements in our
-                //adapter to be the new list of messagesa, and also notify the UI
-                //that the data has changed so it get's redrawn
+
                 messagesAdapter.setElements(messages);
                 messagesAdapter.notifyDataSetChanged();
             }
         });
 
-
-        //we need the initial load to show some values so lets set the LiveData value
-        //that way the observer above fires
 
         //NOTE: the LiveData class does not have setValue so cast this as MutableLiveData
         //messageDao.fetchAllMessages().setValue(messages);

@@ -60,9 +60,7 @@ public class ViewPeersActivity extends FragmentActivity implements AdapterView.O
         chatDatabase.peerDao().fetchAllPeers().observe(this, new Observer<List<Peer>>() {
             @Override
             public void onChanged(List<Peer> peers) {
-                //if our list of messages has changed we should set the elements in our
-                //adapter to be the new list of messagesa, and also notify the UI
-                //that the data has changed so it get's redrawn
+
                 peersAdapter.setElements(peers);
                 peersAdapter.notifyDataSetChanged();
             }
